@@ -1,0 +1,21 @@
+# 驗證 repo：收到 dispatch 後 checkout 開發 repo 的指定 sha，跑黑箱測試
+name: verify
+on:
+  repository_dispatch:
+    types: [app-updated]
+  workflow_dispatch:        # 也可以在 Actions 頁面手動按 Run
+jobs:
+  black-box:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: cleo-tspy/todo-dev
+          ref: ${{ github.event.client_payload.sha || 'main' }}
+          path: .target
+          # 開發 repo 若是 private，這裡要多加 token: ${{ secrets.DEV_REPO_PAT }}（Contents: read）
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: APP_DIR=$PWD/.target/app uv run pytest -q -rf
